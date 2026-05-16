@@ -221,7 +221,3 @@ const state = {
   }
 };
 ```
-
-## License
-
-MIT License - 自由使用和修改
