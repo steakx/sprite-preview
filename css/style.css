@@ -1,0 +1,442 @@
+/**
+ * style.css - Sprite Preview 样式文件
+ * 深色主题 + 左右分栏布局 + 响应式适配
+ */
+
+/* ========== 基础变量 ========== */
+:root {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --text-primary: #eaeaea;
+  --text-secondary: #a0a0a0;
+  --accent: #0f3460;
+  --highlight: #e94560;
+  --success: #4ade80;
+  --error: #f87171;
+  --spacing-unit: 8px;
+}
+
+/* ========== 全局样式 ========== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+/* ========== 主容器布局 ========== */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ========== 左侧控制面板 ========== */
+.control-panel {
+  width: 30%;
+  min-width: 280px;
+  background-color: var(--bg-secondary);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ========== 上传区 ========== */
+.upload-zone {
+  border: 2px dashed var(--text-secondary);
+  border-radius: 8px;
+  padding: 32px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.upload-zone:hover,
+.upload-zone:focus {
+  border-color: var(--highlight);
+  background-color: rgba(233, 69, 96, 0.1);
+}
+
+.upload-zone.is-dragging {
+  border-color: var(--highlight);
+  background-color: rgba(233, 69, 96, 0.2);
+}
+
+.upload-zone.is-loading {
+  border-style: solid;
+}
+
+.upload-hint {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.preview-thumb {
+  max-width: 100%;
+  max-height: 150px;
+  border-radius: 4px;
+}
+
+.image-info {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+}
+
+.reupload-hint {
+  font-size: 12px;
+  color: var(--highlight);
+  margin-top: 4px;
+  cursor: pointer;
+}
+
+/* ========== 进度条 ========== */
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: var(--accent);
+  border-radius: 4px;
+  margin: 16px 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: var(--highlight);
+  border-radius: 4px;
+  transition: width 0.1s;
+}
+
+.loading-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* ========== 参数控制区 ========== */
+.param-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.param-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.param-group label {
+  min-width: 60px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.param-group input[type="number"] {
+  width: 80px;
+  padding: 8px 12px;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.param-group input[type="number"]:focus {
+  outline: 2px solid var(--highlight);
+}
+
+.param-group.frame-range-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.param-group.frame-range-group input[type="number"] {
+  width: 60px;
+  padding: 6px 8px;
+}
+
+.param-group.frame-range-group span {
+  color: var(--text-secondary);
+}
+
+.param-group input[type="range"] {
+  flex: 1;
+  accent-color: var(--highlight);
+}
+
+#fps-value {
+  min-width: 32px;
+  font-size: 18px;
+  font-weight: 400;
+}
+
+/* ========== 播放控制区 ========== */
+.play-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+#play-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: var(--accent);
+  border: none;
+  color: var(--text-primary);
+  font-size: 20px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+#play-btn:hover,
+#play-btn:focus {
+  background-color: var(--highlight);
+  outline: 2px solid var(--text-primary);
+}
+
+#clear-btn {
+  padding: 8px 16px;
+  background-color: var(--accent);
+  border: none;
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+#clear-btn:hover,
+#clear-btn:focus {
+  background-color: var(--highlight);
+  outline: 2px solid var(--text-primary);
+}
+
+#loop-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--accent);
+  border: none;
+  color: var(--text-primary);
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+#loop-btn:hover,
+#loop-btn:focus {
+  background-color: var(--highlight);
+  outline: 2px solid var(--text-primary);
+}
+
+#loop-btn.is-active {
+  background-color: var(--success);
+}
+
+#direction-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--accent);
+  border: none;
+  color: var(--text-primary);
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+#direction-btn:hover,
+#direction-btn:focus {
+  background-color: var(--highlight);
+  outline: 2px solid var(--text-primary);
+}
+
+#direction-btn.is-reverse {
+  background-color: var(--error);
+}
+
+#export-gif-btn {
+  padding: 8px 12px;
+  background-color: var(--accent);
+  border: none;
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+#export-gif-btn:hover,
+#export-gif-btn:focus {
+  background-color: var(--highlight);
+  outline: 2px solid var(--text-primary);
+}
+
+#export-gif-btn.is-loading {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* ========== 导出控制区 ========== */
+.export-panel {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: var(--bg-primary);
+  border-radius: 8px;
+}
+
+.export-title {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.export-options {
+  display: flex;
+  gap: 8px;
+}
+
+#export-json-btn,
+#export-png-btn {
+  padding: 8px 12px;
+  background-color: var(--accent);
+  border: none;
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+#export-json-btn:hover,
+#export-png-btn:focus,
+#export-png-btn:hover,
+#export-png-btn:focus {
+  background-color: var(--highlight);
+  outline: 2px solid var(--text-primary);
+}
+
+/* ========== 帧网格预览区 ========== */
+.frame-grid {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: var(--bg-primary);
+  border-radius: 8px;
+}
+
+.grid-title {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.frame-thumbnails {
+  display: grid;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.frame-thumb {
+  border: 2px solid var(--accent);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.frame-thumb:hover {
+  border-color: var(--highlight);
+}
+
+.frame-thumb.is-current {
+  border-color: var(--success);
+}
+
+.frame-thumb.in-range {
+  opacity: 1;
+}
+
+.frame-thumb:not(.in-range) {
+  opacity: 0.4;
+}
+
+.frame-thumb img {
+  max-width: 64px;
+  max-height: 64px;
+  display: block;
+}
+
+#frame-indicator {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* ========== 错误消息区 ========== */
+.error-message {
+  padding: 12px;
+  background-color: rgba(248, 113, 113, 0.2);
+  border: 1px solid var(--error);
+  border-radius: 4px;
+  color: var(--error);
+  font-size: 14px;
+}
+
+.error-message.is-success {
+  background-color: rgba(74, 222, 128, 0.2);
+  border-color: var(--success);
+  color: var(--success);
+}
+
+/* ========== 右侧预览区 ========== */
+.preview-area {
+  width: 70%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 32px;
+  background-color: var(--bg-primary);
+}
+
+#preview-canvas {
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background-color: #0f0f1a;
+}
+
+/* ========== 响应式适配 ========== */
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+
+  .control-panel {
+    width: 100%;
+    min-width: 100%;
+    order: 1;
+  }
+
+  .preview-area {
+    width: 100%;
+    order: 2;
+    min-height: 300px;
+  }
+}
+
+/* ========== 焦点可见性 ========== */
+:focus-visible {
+  outline: 2px solid var(--highlight);
+  outline-offset: 2px;
+}
+
+/* ========== 键盘无障碍 ========== */
+.upload-zone:focus {
+  outline: 2px solid var(--highlight);
+}

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sprite Preview</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- 主容器 -->
+  <div class="app-container">
+
+    <!-- 左侧控制面板 -->
+    <aside class="control-panel">
+      <!-- 上传区 -->
+      <div id="upload-zone" class="upload-zone" role="button" tabindex="0" aria-label="上传精灵表图，拖拽或点击选择文件">
+        <p class="upload-hint">拖拽或点击上传精灵表图</p>
+        <input type="file" id="file-input" accept=".png,.jpg,.jpeg" hidden aria-label="选择文件">
+      </div>
+
+      <!-- 参数控制区 -->
+      <div class="param-controls">
+        <div class="param-group">
+          <label for="rows-input">行数</label>
+          <input type="number" id="rows-input" value="4" min="1" aria-label="切分行数">
+        </div>
+        <div class="param-group">
+          <label for="cols-input">列数</label>
+          <input type="number" id="cols-input" value="4" min="1" aria-label="切分列数">
+        </div>
+        <div class="param-group">
+          <label for="fps-slider">FPS</label>
+          <input type="range" id="fps-slider" min="1" max="60" value="8" aria-label="帧率调节，使用箭头键增减">
+          <span id="fps-value" aria-live="polite">8</span>
+        </div>
+        <div class="param-group frame-range-group">
+          <label>帧范围</label>
+          <input type="number" id="start-frame-input" value="1" min="1" aria-label="起始帧">
+          <span>-</span>
+          <input type="number" id="end-frame-input" value="16" min="1" aria-label="结束帧">
+        </div>
+      </div>
+
+      <!-- 播放控制区 -->
+      <div class="play-controls">
+        <button id="play-btn" aria-label="播放" aria-pressed="false">▶</button>
+        <span id="frame-indicator" role="button" tabindex="0" aria-label="当前帧，点击跳转到指定帧">帧 0/0</span>
+        <button id="direction-btn" aria-label="正序播放" aria-pressed="false">➡</button>
+        <button id="loop-btn" aria-label="循环播放开启" aria-pressed="true">🔄</button>
+        <button id="export-gif-btn" aria-label="导出GIF">📥 GIF</button>
+        <button id="clear-btn" aria-label="清除配置">重置</button>
+      </div>
+
+      <!-- 导出控制区 -->
+      <div id="export-panel" class="export-panel" hidden>
+        <p class="export-title">导出选项</p>
+        <div class="export-options">
+          <button id="export-json-btn" aria-label="导出配置JSON">📄 JSON</button>
+          <button id="export-png-btn" aria-label="导出PNG序列">🖼 PNG</button>
+        </div>
+      </div>
+
+      <!-- 帧网格预览区 -->
+      <div id="frame-grid" class="frame-grid" hidden>
+        <p class="grid-title">帧网格预览</p>
+        <div id="frame-thumbnails" class="frame-thumbnails"></div>
+      </div>
+
+      <!-- 错误消息区 -->
+      <div id="error-message" class="error-message" hidden></div>
+    </aside>
+
+    <!-- 右侧预览区 -->
+    <main class="preview-area">
+      <canvas id="preview-canvas"></canvas>
+    </main>
+
+  </div>
+
+  <!-- 模块加载 -->
+  <script src="js/lib/gif.js"></script>
+  <script src="js/lib/jszip.min.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

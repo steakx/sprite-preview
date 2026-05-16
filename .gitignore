@@ -1,0 +1,9 @@
+/.claude
+/.playwright-mcp
+/deploy
+/deploy-package.tar
+/docker-compose.yml
+/Dockerfile
+/docs
+/_bmad
+/_bmad-output
