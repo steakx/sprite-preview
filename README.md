@@ -107,6 +107,55 @@ php -S localhost:8080
 
 只需将整个目录上传即可，无需构建步骤。
 
+### 方式四：Docker 部署
+
+使用 Docker 容器部署，适合服务器环境或容器化部署场景。
+
+**构建并运行：**
+
+```bash
+# 构建镜像
+docker build -t sprite-preview .
+
+# 运行容器
+docker run -d -p 8080:80 --name sprite-preview sprite-preview
+
+# 访问应用
+# http://localhost:8080
+```
+
+**使用 Docker Compose（推荐）：**
+
+```bash
+# 启动服务
+docker-compose up -d
+
+# 访问应用 (默认端口 3988)
+# http://localhost:3988
+
+# 停止服务
+docker-compose down
+
+# 查看日志
+docker-compose logs -f
+```
+
+**Docker 配置说明：**
+
+- 使用 `nginx:alpine` 作为基础镜像
+- 包含健康检查配置
+- 支持时区设置 (TZ=Asia/Shanghai)
+- 可挂载日志目录到 `./logs`
+
+**文件说明：**
+
+| 文件 | 说明 |
+|------|------|
+| `Dockerfile` | Docker 镜像构建配置 |
+| `docker-compose.yml` | Docker Compose 服务编排 |
+| `.dockerignore` | 构建时排除的文件 |
+| `deploy/nginx.conf` | Nginx 配置文件 |
+
 ## 使用方式
 
 1. **上传图片** - 拖拽或点击上传精灵表图
@@ -176,7 +225,3 @@ const state = {
 ## License
 
 MIT License - 自由使用和修改
-
-## 作者
-
-开发用于个人游戏开发工具，解决精灵动画快速验证的痛点。
