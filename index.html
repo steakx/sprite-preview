@@ -12,58 +12,144 @@
 
     <!-- 左侧控制面板 -->
     <aside class="control-panel">
-      <!-- 上传区 -->
-      <div id="upload-zone" class="upload-zone" role="button" tabindex="0" aria-label="上传精灵表图，拖拽或点击选择文件">
-        <p class="upload-hint">拖拽或点击上传精灵表图</p>
-        <input type="file" id="file-input" accept=".png,.jpg,.jpeg" hidden aria-label="选择文件">
+
+      <!-- 模式切换区 -->
+      <div class="mode-switch">
+        <button id="static-mode-btn" class="mode-btn is-active" aria-label="普通预览" aria-pressed="true">普通预览</button>
+      <button id="walk-mode-btn" class="mode-btn" aria-label="行走预览模式" aria-pressed="false">行走预览</button>
+    </div>
+
+      <!-- === 普通预览模式 === -->
+      <div id="static-panel" class="mode-panel">
+        <!-- 上传区 -->
+        <div id="upload-zone" class="upload-zone" role="button" tabindex="0" aria-label="上传精灵表图，拖拽或点击选择文件">
+          <p class="upload-hint">拖拽或点击上传精灵表图</p>
+          <input type="file" id="file-input" accept=".png,.jpg,.jpeg" hidden aria-label="选择文件">
+        </div>
+
+        <!-- 参数控制区 -->
+        <div class="param-controls">
+          <div class="param-group">
+            <label for="rows-input">行数</label>
+            <input type="number" id="rows-input" value="4" min="1" aria-label="切分行数">
+          </div>
+          <div class="param-group">
+            <label for="cols-input">列数</label>
+            <input type="number" id="cols-input" value="4" min="1" aria-label="切分列数">
+          </div>
+          <div class="param-group">
+            <label for="fps-slider">FPS</label>
+            <input type="range" id="fps-slider" min="1" max="60" value="8" aria-label="帧率调节，使用箭头键增减">
+            <span id="fps-value" aria-live="polite">8</span>
+          </div>
+          <div class="param-group frame-range-group">
+            <label>帧范围</label>
+            <input type="number" id="start-frame-input" value="1" min="1" aria-label="起始帧">
+            <span>-</span>
+            <input type="number" id="end-frame-input" value="16" min="1" aria-label="结束帧">
+          </div>
+        </div>
+
+        <!-- 播放控制区 -->
+        <div class="play-controls">
+          <button id="play-btn" aria-label="播放" aria-pressed="false">▶</button>
+          <span id="frame-indicator" role="button" tabindex="0" aria-label="当前帧，点击跳转到指定帧">帧 0/0</span>
+          <button id="direction-btn" aria-label="正序播放" aria-pressed="false">➡</button>
+          <button id="loop-btn" aria-label="循环播放开启" aria-pressed="true">🔄</button>
+          <button id="export-gif-btn" aria-label="导出GIF">📥 GIF</button>
+          <button id="clear-btn" aria-label="清除配置">重置</button>
+        </div>
+
+        <!-- 导出控制区 -->
+        <div id="export-panel" class="export-panel" hidden>
+          <p class="export-title">导出选项</p>
+          <div class="export-options">
+            <button id="export-json-btn" aria-label="导出配置JSON">📄 JSON</button>
+            <button id="export-png-btn" aria-label="导出PNG序列">🖼 PNG</button>
+          </div>
+        </div>
+
+        <!-- 帧网格预览区 -->
+        <div id="frame-grid" class="frame-grid" hidden>
+          <p class="grid-title">帧网格预览</p>
+          <div id="frame-thumbnails" class="frame-thumbnails"></div>
+        </div>
       </div>
 
-      <!-- 参数控制区 -->
-      <div class="param-controls">
-        <div class="param-group">
-          <label for="rows-input">行数</label>
-          <input type="number" id="rows-input" value="4" min="1" aria-label="切分行数">
+      <!-- === 行走预览模式 === -->
+      <div id="walk-panel" class="mode-panel" hidden>
+        <!-- 精灵上传区 -->
+        <div id="sprite-upload-zone" class="upload-zone" role="button" tabindex="0" aria-label="上传精灵表图">
+          <p class="upload-hint">上传精灵表图</p>
+          <input type="file" id="sprite-input" accept=".png,.jpg,.jpeg" hidden aria-label="选择精灵文件">
         </div>
-        <div class="param-group">
-          <label for="cols-input">列数</label>
-          <input type="number" id="cols-input" value="4" min="1" aria-label="切分列数">
-        </div>
-        <div class="param-group">
-          <label for="fps-slider">FPS</label>
-          <input type="range" id="fps-slider" min="1" max="60" value="8" aria-label="帧率调节，使用箭头键增减">
-          <span id="fps-value" aria-live="polite">8</span>
-        </div>
-        <div class="param-group frame-range-group">
-          <label>帧范围</label>
-          <input type="number" id="start-frame-input" value="1" min="1" aria-label="起始帧">
-          <span>-</span>
-          <input type="number" id="end-frame-input" value="16" min="1" aria-label="结束帧">
-        </div>
-      </div>
 
-      <!-- 播放控制区 -->
-      <div class="play-controls">
-        <button id="play-btn" aria-label="播放" aria-pressed="false">▶</button>
-        <span id="frame-indicator" role="button" tabindex="0" aria-label="当前帧，点击跳转到指定帧">帧 0/0</span>
-        <button id="direction-btn" aria-label="正序播放" aria-pressed="false">➡</button>
-        <button id="loop-btn" aria-label="循环播放开启" aria-pressed="true">🔄</button>
-        <button id="export-gif-btn" aria-label="导出GIF">📥 GIF</button>
-        <button id="clear-btn" aria-label="清除配置">重置</button>
-      </div>
-
-      <!-- 导出控制区 -->
-      <div id="export-panel" class="export-panel" hidden>
-        <p class="export-title">导出选项</p>
-        <div class="export-options">
-          <button id="export-json-btn" aria-label="导出配置JSON">📄 JSON</button>
-          <button id="export-png-btn" aria-label="导出PNG序列">🖼 PNG</button>
+        <!-- 背景上传区 -->
+        <div id="background-upload-zone" class="upload-zone" role="button" tabindex="0" aria-label="上传背景图片">
+          <p class="upload-hint">拖拽或点击上传背景</p>
+          <input type="file" id="background-input" accept=".png,.jpg,.jpeg" hidden aria-label="选择背景文件">
         </div>
-      </div>
 
-      <!-- 帧网格预览区 -->
-      <div id="frame-grid" class="frame-grid" hidden>
-        <p class="grid-title">帧网格预览</p>
-        <div id="frame-thumbnails" class="frame-thumbnails"></div>
+        <!-- 背景渲染模式选择 -->
+        <div class="background-mode-controls">
+          <label for="background-mode-select">背景渲染模式</label>
+          <select id="background-mode-select" aria-label="背景渲染模式选择">
+            <option value="fit" selected>自适应（填满）</option>
+            <option value="tile">平铺</option>
+            <option value="stretch">拉升</option>
+          </select>
+        </div>
+
+        <!-- 行走参数控制区 -->
+        <div class="walk-param-controls">
+          <div class="param-group">
+            <label for="walk-y-input">Y轴高度</label>
+            <input type="number" id="walk-y-input" value="200" min="0" aria-label="角色行走高度">
+            <span class="param-note">像素</span>
+          </div>
+          <div class="param-group">
+            <label for="walk-speed-slider">行走速度</label>
+            <input type="range" id="walk-speed-slider" min="10" max="200" value="50" aria-label="行走速度调节">
+            <span id="walk-speed-value" aria-live="polite">50</span>
+            <span class="param-note">px/s</span>
+          </div>
+          <div class="param-group">
+            <label>切分参数</label>
+            <input type="number" id="walk-rows-input" value="4" min="1" aria-label="行数" style="width:60px">
+            <span>×</span>
+            <input type="number" id="walk-cols-input" value="4" min="1" aria-label="列数" style="width:60px">
+          </div>
+          <div class="param-group frame-range-group">
+            <label>行走帧范围</label>
+            <input type="number" id="walk-start-frame" value="1" min="1" aria-label="起始帧" style="width:60px">
+            <span>-</span>
+            <input type="number" id="walk-end-frame" value="16" min="1" aria-label="结束帧" style="width:60px">
+          </div>
+          <div class="param-group">
+            <label for="sprite-scale-slider">精灵缩放</label>
+            <input type="range" id="sprite-scale-slider" min="10" max="500" value="100" aria-label="精灵缩放调节">
+            <span id="sprite-scale-value" aria-live="polite">100%</span>
+          </div>
+        </div>
+
+        <!-- 行走控制区 -->
+        <div class="walk-controls">
+          <button id="walk-play-btn" aria-label="播放行走" aria-pressed="false">▶</button>
+          <button id="walk-reset-btn" aria-label="重置位置">↺ 重置</button>
+          <span id="walk-x-display" aria-live="polite">X: 0</span>
+        </div>
+
+        <!-- 循环模式控制 -->
+        <div class="loop-mode-controls">
+          <label for="loop-mode-select">循环模式</label>
+          <select id="loop-mode-select" aria-label="行走循环模式">
+            <option value="infinite">无限循环</option>
+            <option value="1">1次</option>
+            <option value="2">2次</option>
+            <option value="3">3次</option>
+            <option value="5">5次</option>
+          </select>
+        </div>
       </div>
 
       <!-- 错误消息区 -->
@@ -72,6 +158,10 @@
 
     <!-- 右侧预览区 -->
     <main class="preview-area">
+      <div id="y-axis-indicator" class="y-axis-indicator" hidden>
+        <div class="y-axis-arrow">▶</div>
+        <div class="y-axis-label">拖拽调整高度</div>
+      </div>
       <canvas id="preview-canvas"></canvas>
     </main>
 

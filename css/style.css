@@ -403,6 +403,40 @@ body {
   align-items: center;
   padding: 32px;
   background-color: var(--bg-primary);
+  position: relative;
+}
+
+/* Y轴指示器（Canvas外部左侧） */
+.y-axis-indicator:not([hidden]) {
+  position: absolute;
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  z-index: 10;
+  cursor: grab;
+  user-select: none;
+}
+
+.y-axis-indicator:active {
+  cursor: grabbing;
+}
+
+.y-axis-arrow {
+  font-size: 20px;
+  color: #e94560;
+  line-height: 1;
+}
+
+.y-axis-label {
+  font-size: 12px;
+  font-weight: bold;
+  color: #ffffff;
+  white-space: nowrap;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+  background-color: rgba(233, 69, 96, 0.9);
+  padding: 3px 6px;
+  border-radius: 3px;
+  margin-right: 4px;
 }
 
 #preview-canvas {
@@ -439,4 +473,220 @@ body {
 /* ========== 键盘无障碍 ========== */
 .upload-zone:focus {
   outline: 2px solid var(--highlight);
+}
+
+/* ========== 模式切换区 ========== */
+.mode-switch {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 10px 16px;
+  background-color: var(--accent);
+  border: none;
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.mode-btn:hover,
+.mode-btn:focus {
+  background-color: var(--highlight);
+}
+
+.mode-btn.is-active {
+  background-color: var(--highlight);
+  font-weight: 600;
+}
+
+/* ========== 模式面板 ========== */
+.mode-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mode-panel[hidden] {
+  display: none;
+}
+
+/* ========== 行走参数控制区 ========== */
+.walk-param-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.walk-param-controls .param-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.walk-param-controls label {
+  min-width: 80px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.walk-param-controls input[type="number"] {
+  width: 70px;
+  padding: 6px 8px;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.walk-param-controls input[type="range"] {
+  flex: 1;
+  accent-color: var(--highlight);
+}
+
+.param-note {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+#walk-speed-value {
+  min-width: 32px;
+  font-size: 14px;
+}
+
+#sprite-scale-value {
+  min-width: 48px;
+  font-size: 14px;
+}
+
+/* ========== 背景渲染模式控制区 ========== */
+.background-mode-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.background-mode-controls label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.background-mode-controls select {
+  padding: 8px 12px;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.background-mode-controls select:focus {
+  outline: 2px solid var(--highlight);
+}
+
+/* ========== 行走控制区 ========== */
+.walk-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#walk-play-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: var(--accent);
+  border: none;
+  color: var(--text-primary);
+  font-size: 20px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+#walk-play-btn:hover,
+#walk-play-btn:focus {
+  background-color: var(--highlight);
+}
+
+#walk-reset-btn {
+  padding: 8px 16px;
+  background-color: var(--accent);
+  border: none;
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+#walk-reset-btn:hover,
+#walk-reset-btn:focus {
+  background-color: var(--highlight);
+}
+
+#walk-x-display {
+  font-size: 14px;
+  color: var(--text-secondary);
+  min-width: 60px;
+}
+
+/* ========== 循环模式控制 ========== */
+.loop-mode-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.loop-mode-controls label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.loop-mode-controls select {
+  padding: 6px 12px;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.loop-mode-controls select:focus {
+  outline: 2px solid var(--highlight);
+}
+
+/* ========== 背景上传区 ========== */
+#background-upload-zone.has-background {
+  border-style: solid;
+  border-color: var(--success);
+}
+
+.background-thumb {
+  max-width: 100%;
+  max-height: 100px;
+  border-radius: 4px;
+}
+
+#background-upload-zone .clear-btn {
+  padding: 6px 12px;
+  background-color: var(--error);
+  border: none;
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+#background-upload-zone .clear-btn:hover,
+#background-upload-zone .clear-btn:focus {
+  opacity: 0.8;
 }

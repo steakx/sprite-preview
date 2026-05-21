@@ -1,6 +1,6 @@
 /**
  * main.js - 应用入口模块
- * 负责: 初始化、事件绑定、模块协调
+ * 负责: 初始化、事件绑定、模块协调、模式切换
  */
 
 import { cacheFrames } from './sprite.js';
@@ -8,14 +8,26 @@ import { startAnimation, stopAnimation, renderCurrentFrame, updatePlayButton } f
 import { saveConfig, loadConfig, clearConfig } from './storage.js';
 import { exportGif } from './gif-export.js';
 import { exportJson, exportPngSequence } from './file-export.js';
+import { startWalkAnimation, stopWalkAnimation, renderWalkFrame, updateWalkPlayButton, resetWalkPosition, initWalkMode, cleanupWalkMode } from './walkAnimator.js';
+import { loadBackground, clearBackground, showBackgroundPreview, resetBackgroundUploadZone } from './background.js';
+import { initYAxisControl, setYAxisPosition } from './yAxisControl.js';
+import { initSpriteResizeControl } from './spriteResizeControl.js';
 
 // 全局状态对象
 const state = {
+  // === 预览模式 ===
+  previewMode: 'static',     // 'static' | 'walk'  预览模式
+
+  // === 图片相关 ===
   image: null,
   imageWidth: 0,
   imageHeight: 0,
+
+  // === 切分参数 ===
   rows: 4,
   cols: 4,
+
+  // === 静止动画参数 ===
   fps: 8,
   isPlaying: false,
   isLooping: true,      // 循环播放开关
@@ -27,7 +39,32 @@ const state = {
   frameRange: {
     start: 0,   // 起始帧索引 (0-based)
     end: 15     // 结束帧索引 (0-based)
-  }
+  },
+
+  // === 行走预览参数 ===
+  background: null,          // 背景图片对象
+  backgroundWidth: 0,        // 背景宽度
+  backgroundHeight: 0,       // 背景高度
+
+  walkY: 400,                // Y轴位置（地面高度）
+  walkSpeed: 50,             // 行走速度（像素/秒）
+  walkX: 0,                  // 当前X坐标位置
+  walkStartFrame: 0,         // 行走动画起始帧
+  walkEndFrame: 15,          // 行走动画结束帧
+  walkLoopMode: 'infinite',  // 'infinite' | 指定次数
+  walkLoopCount: 0,          // 已循环次数
+  isWalkPlaying: false,      // 行走动画播放状态
+  walkCurrentFrame: 0,       // 行走当前帧
+
+  // === Canvas尺寸 ===
+  canvasWidth: 800,          // 预览Canvas宽度（固定）
+  canvasHeight: 600,         // 预览Canvas高度（固定）
+
+  // === 背景渲染参数 ===
+  backgroundMode: 'fit',     // 'tile' | 'stretch' | 'fit'（自适应填满）
+
+  // === 精灵缩放参数 ===
+  spriteScale: 1.0,          // 缩放比例（0.1 - 5.0）
 };
 
 // 最大文件大小限制 (200MB)
@@ -37,29 +74,59 @@ const MAX_FILE_SIZE = 200 * 1024 * 1024;
  * 初始化应用
  */
 function init() {
+  // 暴露state到window（供yAxisControl.js使用）
+  window.appState = state;
+
   // 加载保存的配置
   const savedConfig = loadConfig();
   state.rows = savedConfig.rows;
   state.cols = savedConfig.cols;
   state.fps = savedConfig.fps;
+  state.backgroundMode = savedConfig.backgroundMode;
+  state.spriteScale = savedConfig.spriteScale || 1.0; // 确保有效值
+  state.walkY = savedConfig.walkY;
 
-  // 设置UI初始值
+  // 设置UI初始值（静止模式）
   document.getElementById('rows-input').value = state.rows;
   document.getElementById('cols-input').value = state.cols;
   document.getElementById('fps-slider').value = state.fps;
   document.getElementById('fps-value').textContent = state.fps;
 
+  // 设置UI初始值（行走模式）
+  document.getElementById('walk-rows-input').value = state.rows;
+  document.getElementById('walk-cols-input').value = state.cols;
+  document.getElementById('walk-y-input').value = state.walkY;
+  document.getElementById('walk-speed-slider').value = state.walkSpeed;
+  document.getElementById('walk-speed-value').textContent = state.walkSpeed;
+  document.getElementById('walk-start-frame').value = state.walkStartFrame + 1;
+  document.getElementById('walk-end-frame').value = state.walkEndFrame + 1;
+  document.getElementById('sprite-scale-slider').value = state.spriteScale * 100;
+  document.getElementById('sprite-scale-value').textContent = `${Math.round(state.spriteScale * 100)}%`;
+  document.getElementById('background-mode-select').value = state.backgroundMode;
+
   // 初始化帧范围
   state.totalFrames = state.rows * state.cols;
   state.frameRange.end = state.totalFrames - 1;
+  state.walkEndFrame = state.totalFrames - 1;
   document.getElementById('end-frame-input').value = state.totalFrames;
+  document.getElementById('walk-end-frame').value = state.totalFrames;
 
   // 设置循环按钮初始状态
   updateLoopButton(state.isLooping);
   updateDirectionButton(state.isReverse);
 
+  // 初始化Y轴拖拽控制
+  const canvas = document.getElementById('preview-canvas');
+  initYAxisControl(state, canvas);
+
+  // 初始化精灵缩放拖拽控制
+  initSpriteResizeControl(state, canvas);
+
   // 绑定事件
   setupEventListeners();
+
+  // 设置初始模式
+  state.previewMode = 'static';
 
   console.log('Sprite Preview initialized');
 }
@@ -68,6 +135,8 @@ function init() {
  * 设置事件监听器
  */
 function setupEventListeners() {
+  // === 静止动画预览模式事件 ===
+
   // 上传区拖拽事件
   const uploadZone = document.getElementById('upload-zone');
   uploadZone.addEventListener('dragover', handleDragOver);
@@ -126,6 +195,55 @@ function setupEventListeners() {
     }
   });
 
+  // === 模式切换事件 ===
+  document.getElementById('static-mode-btn').addEventListener('click', handleStaticModeClick);
+  document.getElementById('walk-mode-btn').addEventListener('click', handleWalkModeClick);
+
+  // === 行走预览模式事件 ===
+
+  // 精灵上传（行走模式）
+  const spriteUploadZone = document.getElementById('sprite-upload-zone');
+  spriteUploadZone.addEventListener('dragover', handleDragOver);
+  spriteUploadZone.addEventListener('dragleave', handleDragLeave);
+  spriteUploadZone.addEventListener('drop', handleSpriteDrop);
+  spriteUploadZone.addEventListener('click', () => {
+    document.getElementById('sprite-input').click();
+  });
+  document.getElementById('sprite-input').addEventListener('change', handleSpriteSelect);
+
+  // 背景上传
+  const backgroundUploadZone = document.getElementById('background-upload-zone');
+  backgroundUploadZone.addEventListener('dragover', handleDragOver);
+  backgroundUploadZone.addEventListener('dragleave', handleDragLeave);
+  backgroundUploadZone.addEventListener('drop', handleBackgroundDrop);
+  backgroundUploadZone.addEventListener('click', (e) => {
+    // 如果点击的是清除按钮，不触发文件选择器
+    if (e.target.closest('#clear-background-btn')) return;
+    document.getElementById('background-input').click();
+  });
+  document.getElementById('background-input').addEventListener('change', handleBackgroundSelect);
+
+  // 背景渲染模式选择
+  document.getElementById('background-mode-select').addEventListener('change', handleBackgroundModeChange);
+
+  // 行走参数变化
+  document.getElementById('walk-y-input').addEventListener('change', handleWalkYChange);
+  document.getElementById('walk-speed-slider').addEventListener('input', handleWalkSpeedChange);
+  document.getElementById('walk-rows-input').addEventListener('change', handleWalkRowsChange);
+  document.getElementById('walk-cols-input').addEventListener('change', handleWalkColsChange);
+  document.getElementById('walk-start-frame').addEventListener('change', handleWalkStartFrameChange);
+  document.getElementById('walk-end-frame').addEventListener('change', handleWalkEndFrameChange);
+  document.getElementById('sprite-scale-slider').addEventListener('input', handleSpriteScaleChange);
+
+  // 行走控制按钮
+  document.getElementById('walk-play-btn').addEventListener('click', handleWalkPlayClick);
+  document.getElementById('walk-reset-btn').addEventListener('click', handleWalkResetClick);
+
+  // 循环模式选择
+  document.getElementById('loop-mode-select').addEventListener('change', handleLoopModeChange);
+
+  // === 全局事件 ===
+
   // 页面可见性变化（暂停动画）
   document.addEventListener('visibilitychange', handleVisibilityChange);
 
@@ -174,7 +292,7 @@ function handleRowsChange(e) {
     state.frameRange.start = 0;
     state.frameRange.end = state.totalFrames - 1;
     updateFrameRangeInputs();
-    saveConfig({ rows: state.rows, cols: state.cols, fps: state.fps });
+    saveConfig({ rows: state.rows, cols: state.cols, fps: state.fps, backgroundMode: state.backgroundMode, spriteScale: state.spriteScale, walkY: state.walkY });
 
     if (state.image) {
       cacheFrames(state);
@@ -193,7 +311,7 @@ function handleColsChange(e) {
     state.frameRange.start = 0;
     state.frameRange.end = state.totalFrames - 1;
     updateFrameRangeInputs();
-    saveConfig({ rows: state.rows, cols: state.cols, fps: state.fps });
+    saveConfig({ rows: state.rows, cols: state.cols, fps: state.fps, backgroundMode: state.backgroundMode, spriteScale: state.spriteScale, walkY: state.walkY });
 
     if (state.image) {
       cacheFrames(state);
@@ -207,7 +325,7 @@ function handleFpsChange(e) {
   const value = parseInt(e.target.value, 10);
   state.fps = value;
   document.getElementById('fps-value').textContent = value;
-  saveConfig({ rows: state.rows, cols: state.cols, fps: state.fps });
+  saveConfig({ rows: state.rows, cols: state.cols, fps: state.fps, backgroundMode: state.backgroundMode, spriteScale: state.spriteScale, walkY: state.walkY });
 }
 
 function handleStartFrameChange(e) {
@@ -261,9 +379,17 @@ function handlePlayClick() {
 }
 
 function handleVisibilityChange() {
-  if (document.hidden && state.isPlaying) {
-    stopAnimation(state);
-    updatePlayButton(false);
+  if (document.hidden) {
+    // 静止动画
+    if (state.isPlaying) {
+      stopAnimation(state);
+      updatePlayButton(false);
+    }
+    // 行走动画
+    if (state.isWalkPlaying) {
+      stopWalkAnimation(state);
+      updateWalkPlayButton(false);
+    }
   }
 }
 
@@ -625,6 +751,297 @@ function updateThumbnailHighlight() {
     thumb.classList.toggle('is-current', index === state.currentFrame);
     thumb.classList.toggle('in-range', index >= state.frameRange.start && index <= state.frameRange.end);
   });
+}
+
+// === 模式切换处理函数 ===
+
+function handleStaticModeClick() {
+  if (state.previewMode === 'static') return;
+
+  // 清理行走模式
+  cleanupWalkMode(state);
+
+  // 更新UI
+  document.getElementById('static-mode-btn').classList.add('is-active');
+  document.getElementById('walk-mode-btn').classList.remove('is-active');
+  document.getElementById('static-panel').hidden = false;
+  document.getElementById('walk-panel').hidden = true;
+
+  // 如果有图片，恢复静止预览
+  if (state.image) {
+    renderCurrentFrame(state, document.getElementById('preview-canvas'));
+  }
+}
+
+function handleWalkModeClick() {
+  if (state.previewMode === 'walk') return;
+
+  // 停止静止动画
+  if (state.isPlaying) {
+    stopAnimation(state);
+    updatePlayButton(false);
+  }
+
+  // 初始化行走模式
+  initWalkMode(state);
+
+  // 更新UI
+  document.getElementById('static-mode-btn').classList.remove('is-active');
+  document.getElementById('walk-mode-btn').classList.add('is-active');
+  document.getElementById('static-panel').hidden = true;
+  document.getElementById('walk-panel').hidden = false;
+}
+
+// === 行走预览事件处理函数 ===
+
+function handleSpriteDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  e.currentTarget.classList.remove('is-dragging');
+
+  const files = e.dataTransfer.files;
+  if (files.length) {
+    processSpriteFile(files[0]);
+  }
+}
+
+function handleSpriteSelect(e) {
+  const files = e.target.files;
+  if (files.length) {
+    processSpriteFile(files[0]);
+  }
+}
+
+function processSpriteFile(file) {
+  if (!file.type.match(/image\/(png|jpeg|jpg)/)) {
+    showError('仅支持PNG/JPG格式');
+    return;
+  }
+
+  if (file.size > MAX_FILE_SIZE) {
+    showError('文件过大，最大支持200MB');
+    return;
+  }
+
+  hideError();
+  showLoading(file.size);
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      state.image = img;
+      state.imageWidth = img.width;
+      state.imageHeight = img.height;
+      state.totalFrames = state.rows * state.cols;
+      state.walkEndFrame = state.totalFrames - 1;
+
+      // 缓存帧
+      cacheFrames(state);
+
+      // 计算帧高度，设置合理的初始 walkY（精灵底部在Canvas中间位置）
+      if (state.cachedFrames.length > 0 && state.previewMode === 'walk') {
+        const frameHeight = state.cachedFrames[0].height;
+        const scale = state.spriteScale || 1.0;
+        const scaledHeight = frameHeight * scale;
+
+        // 设置初始位置：精灵底部在Canvas底部附近
+        if (state.walkY === 200) {
+          // 默认值，需要调整
+          state.walkY = Math.min(state.canvasHeight - 20, state.canvasHeight / 2 + scaledHeight / 2);
+        }
+
+        // 更新 UI
+        document.getElementById('walk-y-input').value = state.walkY;
+      }
+
+      hideLoading();
+      showSpritePreview(img);
+
+      if (state.previewMode === 'walk') {
+        renderWalkFrame(state, document.getElementById('preview-canvas'));
+        document.getElementById('walk-end-frame').value = state.totalFrames;
+      }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function showSpritePreview(img) {
+  const uploadZone = document.getElementById('sprite-upload-zone');
+  uploadZone.innerHTML = `
+    <img src="${img.src}" alt="精灵表图预览" class="preview-thumb">
+    <p class="image-info">${img.width} × ${img.height}</p>
+    <input type="file" id="sprite-input" accept=".png,.jpg,.jpeg" hidden aria-label="选择精灵文件">
+  `;
+  document.getElementById('sprite-input').addEventListener('change', handleSpriteSelect);
+}
+
+function handleBackgroundDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  e.currentTarget.classList.remove('is-dragging');
+
+  const files = e.dataTransfer.files;
+  if (files.length) {
+    processBackgroundFile(files[0]);
+  }
+}
+
+function handleBackgroundSelect(e) {
+  const files = e.target.files;
+  if (files.length) {
+    processBackgroundFile(files[0]);
+  }
+}
+
+function processBackgroundFile(file) {
+  loadBackground(file, state,
+    (img) => {
+      hideError();
+      showBackgroundPreview(img);
+
+      // 重新渲染行走预览
+      if (state.previewMode === 'walk') {
+        renderWalkFrame(state, document.getElementById('preview-canvas'));
+      }
+
+      // 绑定清除按钮
+      document.getElementById('clear-background-btn')?.addEventListener('click', handleClearBackgroundClick);
+    },
+    (errorMsg) => {
+      showError(errorMsg);
+    }
+  );
+}
+
+function handleClearBackgroundClick(e) {
+  // 阻止冒泡，避免触发上传区域的click事件
+  e.stopPropagation();
+
+  clearBackground(state);
+  resetBackgroundUploadZone();
+
+  // 重新绑定背景文件选择事件（uploadZone的click事件已在setupEventListeners中绑定，不需要重复）
+  document.getElementById('background-input').addEventListener('change', handleBackgroundSelect);
+
+  // 重置渲染模式选择器
+  document.getElementById('background-mode-select').value = 'fit';
+
+  // 重新渲染
+  if (state.previewMode === 'walk') {
+    renderWalkFrame(state, document.getElementById('preview-canvas'));
+  }
+}
+
+function handleBackgroundModeChange(e) {
+  state.backgroundMode = e.target.value;
+  saveConfig({ rows: state.rows, cols: state.cols, fps: state.fps, backgroundMode: state.backgroundMode, spriteScale: state.spriteScale, walkY: state.walkY });
+
+  // 重新渲染行走预览
+  if (state.previewMode === 'walk' && !state.isWalkPlaying) {
+    renderWalkFrame(state, document.getElementById('preview-canvas'));
+  }
+}
+
+function handleWalkYChange(e) {
+  const value = parseInt(e.target.value, 10);
+  setYAxisPosition(state, value);
+  saveConfig({ rows: state.rows, cols: state.cols, fps: state.fps, backgroundMode: state.backgroundMode, spriteScale: state.spriteScale, walkY: state.walkY });
+
+  if (state.previewMode === 'walk' && !state.isWalkPlaying) {
+    renderWalkFrame(state, document.getElementById('preview-canvas'));
+  }
+}
+
+function handleWalkSpeedChange(e) {
+  const value = parseInt(e.target.value, 10);
+  state.walkSpeed = value;
+  document.getElementById('walk-speed-value').textContent = value;
+}
+
+function handleWalkRowsChange(e) {
+  const value = parseInt(e.target.value, 10);
+  if (value >= 1) {
+    state.rows = value;
+    state.totalFrames = state.rows * state.cols;
+    state.walkEndFrame = Math.min(state.walkEndFrame, state.totalFrames - 1);
+    document.getElementById('walk-end-frame').value = state.walkEndFrame + 1;
+
+    if (state.image) {
+      cacheFrames(state);
+      if (state.previewMode === 'walk' && !state.isWalkPlaying) {
+        renderWalkFrame(state, document.getElementById('preview-canvas'));
+      }
+    }
+  }
+}
+
+function handleWalkColsChange(e) {
+  const value = parseInt(e.target.value, 10);
+  if (value >= 1) {
+    state.cols = value;
+    state.totalFrames = state.rows * state.cols;
+    state.walkEndFrame = Math.min(state.walkEndFrame, state.totalFrames - 1);
+    document.getElementById('walk-end-frame').value = state.walkEndFrame + 1;
+
+    if (state.image) {
+      cacheFrames(state);
+      if (state.previewMode === 'walk' && !state.isWalkPlaying) {
+        renderWalkFrame(state, document.getElementById('preview-canvas'));
+      }
+    }
+  }
+}
+
+function handleWalkStartFrameChange(e) {
+  const value = parseInt(e.target.value, 10) - 1; // 转为0-based
+  if (value >= 0 && value <= state.walkEndFrame) {
+    state.walkStartFrame = value;
+    state.walkCurrentFrame = value;
+  }
+}
+
+function handleWalkEndFrameChange(e) {
+  const value = parseInt(e.target.value, 10) - 1; // 转为0-based
+  if (value >= state.walkStartFrame && value < state.totalFrames) {
+    state.walkEndFrame = value;
+  }
+}
+
+function handleSpriteScaleChange(e) {
+  const value = parseInt(e.target.value, 10) / 100; // 百分比转为缩放系数
+  state.spriteScale = value;
+  document.getElementById('sprite-scale-value').textContent = `${e.target.value}%`;
+  saveConfig({ rows: state.rows, cols: state.cols, fps: state.fps, backgroundMode: state.backgroundMode, spriteScale: state.spriteScale, walkY: state.walkY });
+
+  if (state.previewMode === 'walk' && !state.isWalkPlaying) {
+    renderWalkFrame(state, document.getElementById('preview-canvas'));
+  }
+}
+
+function handleWalkPlayClick() {
+  const canvas = document.getElementById('preview-canvas');
+
+  if (state.isWalkPlaying) {
+    stopWalkAnimation(state);
+    updateWalkPlayButton(false);
+  } else {
+    startWalkAnimation(state, canvas);
+    updateWalkPlayButton(true);
+  }
+}
+
+function handleWalkResetClick() {
+  const canvas = document.getElementById('preview-canvas');
+  resetWalkPosition(state, canvas);
+}
+
+function handleLoopModeChange(e) {
+  const value = e.target.value;
+  state.walkLoopMode = value === 'infinite' ? 'infinite' : parseInt(value, 10);
+  state.walkLoopCount = 0;
 }
 
 // 启动应用

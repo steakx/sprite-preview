@@ -90,13 +90,22 @@ export function renderCurrentFrame(state, canvas) {
 
   const ctx = canvas.getContext('2d');
 
-  // 设置Canvas尺寸匹配帧尺寸
-  canvas.width = frameCanvas.width;
-  canvas.height = frameCanvas.height;
+  // 使用固定Canvas尺寸
+  canvas.width = state.canvasWidth || 800;
+  canvas.height = state.canvasHeight || 600;
 
-  // 清除并绘制
+  // 清除Canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(frameCanvas, 0, 0);
+
+  // 计算居中位置
+  const scale = state.spriteScale || 1.0;
+  const scaledWidth = frameCanvas.width * scale;
+  const scaledHeight = frameCanvas.height * scale;
+  const centerX = (canvas.width - scaledWidth) / 2;
+  const centerY = (canvas.height - scaledHeight) / 2;
+
+  // 绘制缩放后的帧（居中）
+  ctx.drawImage(frameCanvas, centerX, centerY, scaledWidth, scaledHeight);
 }
 
 /**
